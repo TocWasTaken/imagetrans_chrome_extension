@@ -1,0 +1,26 @@
+{
+  "name": "imagetrans-orion-mobile",
+  "version": "6.0.0",
+  "description": "Bundled Korean OCR and OpenRouter translation for Orion on iPhone",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs && node scripts/validate.cjs && node tests/engine-smoke.cjs tests/korean-fixture.png",
+    "package": "python3 scripts/package.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xulihang/ImageTrans_chrome_extension.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0-only",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/xulihang/ImageTrans_chrome_extension/issues"
+  },
+  "homepage": "https://github.com/xulihang/ImageTrans_chrome_extension#readme",
+  "dependencies": {
+    "tesseract.js": "7.0.0"
+  },
+  "private": true
+}

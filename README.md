@@ -1,3 +1,17 @@
+# ImageTrans Mobile for Orion on iPhone
+
+An experimental iPhone-targeted adaptation of ImageTrans with bundled Tesseract.js 7 Korean OCR and OpenRouter HY-MT2 translation. No desktop ImageTrans server or local HY-MT2 model is needed for Mobile OCR. **Cloud-tested; physical iPhone/Orion execution is still unverified.**
+
+## Installing on Orion for iPhone
+
+Download `ImageTrans-Orion-iPhone-6.0.0.zip`, save it to Files, then use Orion **••• → Extensions → + → file-based installation**. Enable extension support in Orion Settings if necessary. The ZIP contains `manifest.json` at its root; GitHub's source ZIP is not the install package.
+
+Open Options → **Use OpenRouter + HY-MT2 preset**, paste your key, choose Korean → English, and Save. Base URL: `https://openrouter.ai/api/v1`; model: `tencent/hy-mt2-7b`. Start with **Mobile OCR diagnostics → Test OCR initialization**.
+
+See [exact installation and settings](INSTALL_IPHONE.md), [engine research and architecture](MOBILE_RESEARCH.md), and [tests and remaining iPhone checks](TESTING.md). General OCR accuracy and Orion compatibility are limitations, not solved guarantees. Mobile OCR uses an API for translation even if an upstream free preset is selected. The old documentation below describes the upstream extension; its statement that iOS requires a server does not describe the new experimental mobile path.
+
+---
+
 # ImageTrans Chrome Extension
 
 > **Languages / 语言:** [English](README.md) · [简体中文](README_zh.md)

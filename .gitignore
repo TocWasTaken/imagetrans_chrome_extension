@@ -1,3 +1,5 @@
 ImageTrans/_metadata
 *.zip
 *.crx
+node_modules/
+dist/
