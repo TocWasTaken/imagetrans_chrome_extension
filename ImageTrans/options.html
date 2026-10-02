@@ -184,7 +184,7 @@
       <div class="form-row">
         <label for="translationMode" data-i18n="options_translation_mode">Translation Mode</label>
         <select id="translationMode">
-          <option value="local" data-i18n="options_mode_local">Local PaddleOCR + Free Translation or OpenAI</option>
+          <option value="local">Local OCR + Translation API</option>
           <option value="imagetrans" data-i18n="options_mode_imagetrans">ImageTrans (local or remote server)</option>
         </select>
       </div>
@@ -346,7 +346,8 @@
       </div>
     </div>
 
-    <!-- OpenAI API -->
+    <div class="card"><div class="card-title">iPhone setup</div><p>OCR models are bundled: Korean 1.6 MB, English 3.9 MB. No desktop server needed. Keep Orion open while translating.</p><button type="button" id="mobilePreset">Use OpenRouter + HY-MT2 preset</button> <a href="mobile/diagnostics.html" target="_blank">Mobile OCR diagnostics &amp; saved-image translator</a><p>Paste your API key below, then Save. API requests use your OpenRouter credits. Mobile OCR always uses the configured translation API.</p></div>
+<!-- OpenAI API -->
     <div class="card">
       <div class="card-title" data-i18n="options_openai_api">OpenAI-Compatible API (optional)</div>
       <div class="form-row">
@@ -358,7 +359,8 @@
       <div id="ocrMethodSection" style="margin-bottom:12px; display:none;">
         <label for="ocrMethod" data-i18n="options_ocr_method">OCR method</label>
         <select id="ocrMethod">
-          <option value="paddleocr" data-i18n="options_ocr_paddleocr">PaddleOCR (local)</option>
+          <option value="mobile">Mobile OCR (Recommended for iOS)</option>
+          <option value="paddleocr">PaddleOCR (Experimental)</option>
           <option value="imagetrans" data-i18n="options_ocr_imagetrans">ImageTrans (remote)</option>
         </select>
       </div>
@@ -495,6 +497,8 @@
       <span data-i18n="options_footer">For more info, visit ImageTrans's</span> <a href="https://www.basiccat.org/imagetrans" target="_blank" data-i18n="options_homepage">homepage</a>.
     </div>
 
-    <script src="options.js"></script>
+    <script src="mobile/common.js"></script>
+<script src="mobile/settings.js"></script>
+<script src="options.js"></script>
   </body>
 </html>

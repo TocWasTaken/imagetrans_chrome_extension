@@ -3,7 +3,7 @@
 // no-op, so open options.html in a new tab directly there. On desktop keep
 // openOptionsPage which focuses an already-open options tab.
 async function openOptions() {
-  if (!/Android/i.test(navigator.userAgent) && typeof chrome.runtime.openOptionsPage === 'function') {
+  if (!/Android|iPhone|iPad/i.test(navigator.userAgent) && typeof chrome.runtime.openOptionsPage === 'function') {
     try {
       await chrome.runtime.openOptionsPage();
       return;
@@ -17,7 +17,7 @@ const _i18nOriginal = chrome.i18n.getMessage.bind(chrome.i18n);
 let getMessage = _i18nOriginal;
 
 async function initI18n() {
-  const { uiLanguage } = await chrome.storage.sync.get({ uiLanguage: '' });
+  const { uiLanguage } = await chrome.storage.local.get({ uiLanguage: '' });
   if (uiLanguage) {
     try {
       const url = chrome.runtime.getURL('_locales/' + uiLanguage + '/messages.json');
@@ -84,9 +84,14 @@ function applyI18n() {
   });
   document.getElementsByClassName('local')[0].addEventListener("click",function(e){
     e.preventDefault();
-    chrome.storage.sync.get({
+    chrome.storage.local.get({
+      ocrMethod: 'mobile',
       serverURL: "https://local.basiccat.org:51043"
     }, async function(items) {
+      if (items.ocrMethod === 'mobile') {
+        await chrome.tabs.create({url:chrome.runtime.getURL('mobile/diagnostics.html')});
+        return;
+      }
       var URL = "https://local.basiccat.org:51043";
       if (items.serverURL) {
         URL = items.serverURL;

@@ -262,7 +262,7 @@ async function clearTranslationCache() {
 
 // --- Custom i18n: allow user to override UI language ---
 (async function() {
-  const { uiLanguage } = await chrome.storage.sync.get({ uiLanguage: '' });
+  const { uiLanguage } = await chrome.storage.local.get({ uiLanguage: '' });
   if (uiLanguage) {
     try {
       const url = chrome.runtime.getURL('_locales/' + uiLanguage + '/messages.json');
@@ -299,12 +299,13 @@ let fetchCount = 0;
 let useCORS = true;
 
 // 初始化时加载用户的CORS设置（不主动启用，等fetch时再开）
-chrome.storage.sync.get({ useCORS: true }, function(items) {
+chrome.storage.local.get({ useCORS: true }, function(items) {
   useCORS = items.useCORS;
 });
 
 // 更新CORS规则状态的函数
 function updateCORSStatus(enabled) {
+  if (!chrome.declarativeNetRequest) return;
   console.log(`更新CORS状态: ${enabled ? '启用' : '禁用'}`);
   if (enabled) {
     chrome.declarativeNetRequest.updateEnabledRulesets({
@@ -560,6 +561,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // 扩展安装时输出日志
 chrome.runtime.onInstalled.addListener(() => {
   console.log('ImageTrans扩展已安装或更新');
+  if (!chrome.contextMenus) return;
   let parent = chrome.contextMenus.create({
     "id": "imagetrans-menu",
     "title": chrome.i18n.getMessage("ctxmenu_parent"),
@@ -579,7 +581,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.contextMenus.onClicked.addListener(function (info, tab) {
+chrome.contextMenus?.onClicked?.addListener(function (info, tab) {
   let message = info.menuItemId+"WithMenu";
   chrome.tabs.sendMessage(tab.id, {message:message,info:info}, function(response) {
 
@@ -587,7 +589,7 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
 });
 
 // Listen for keyboard shortcut commands
-chrome.commands.onCommand.addListener(function(command) {
+chrome.commands?.onCommand?.addListener(function(command) {
   if (command === "screen-capture-ocr") {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       if (tabs.length > 0) {

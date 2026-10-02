@@ -1,6 +1,6 @@
 // --- Custom i18n: allow user to override UI language ---
 (async function() {
-  const { uiLanguage } = await chrome.storage.sync.get({ uiLanguage: '' });
+  const { uiLanguage } = await chrome.storage.local.get({ uiLanguage: '' });
   if (uiLanguage && /^[a-z]{2,3}([-_][A-Za-z]{2,4})?$/.test(uiLanguage)) {
     try {
       const url = chrome.runtime.getURL('_locales/' + uiLanguage + '/messages.json');
@@ -60,9 +60,9 @@ var textRepairMode = 'white'; // 'white' | 'background' | 'none'
 var minFontSize = 14;
 var password = "";
 var displayName = "";
-var sourceLang = "auto";
-var targetLang = "auto";
-var useOpenAI = false;
+var sourceLang = "ko";
+var targetLang = "en";
+var useOpenAI = true;
 var openaiURL = "https://api.deepseek.com/v1";
 var openaiKey = "";
 var openaiModel = "deepseek-v4-flash";
@@ -83,10 +83,10 @@ var ttsQueueIdx = 0;
 var ttsDialogList = null; // reference to the result list in current dialog
 var ttsIsScreenCapture = false; // true when dialog is from screen/camera capture OCR
 var ttsScreenBoxes = null; // boxes array for screen capture dialog
-var ocrMethod = "paddleocr";
+var ocrMethod = "mobile";
 var useYOLODetection = false;
 var useYOLOForJapanese = true;
-var translationMode = "imagetrans";
+var translationMode = "local";
 var defaultPresetTranslation = "glm4flash";
 var sendRequestsViaBackground = false;
 var screenCaptureOverlayMode = false;
@@ -316,7 +316,7 @@ async function readerSelfInit() {
 // Run the reader self-init on every page load; it no-ops unless on reader.html.
 readerSelfInit();
 
-chrome.storage.sync.get({
+chrome.storage.local.get({
     serverURL: serverURL,
     pickingWay: pickingWay,
     password: password,
@@ -328,20 +328,20 @@ chrome.storage.sync.get({
     minFontSize: 14,
     sourceLang: sourceLang,
     targetLang: targetLang,
-    useOpenAI: false,
-    openaiURL: 'https://api.deepseek.com/v1',
+    useOpenAI: true,
+    openaiURL: 'https://openrouter.ai/api/v1',
     openaiKey: '',
-    openaiModel: 'deepseek-v4-flash',
-    openaiPrompt: '',
-    openaiExtraParams: '{"thinking":{"type":"disabled"}}',
-    ocrMethod: 'paddleocr',
+    openaiModel: 'tencent/hy-mt2-7b',
+    openaiPrompt: MobileCommon.PROMPT,
+    openaiExtraParams: '',
+    ocrMethod: 'mobile',
     useYOLODetection: false,
     useYOLOForJapanese: true,
     paddleDetModel: 'small',
     paddleRecModel: 'tiny',
     paddleExecutionProvider: 'webgpu',
     paddleOCRParams: PADDLE_OCR_DEFAULT_PARAMS,
-    translationMode: 'imagetrans',
+    translationMode: 'local',
     defaultPresetTranslation: defaultPresetTranslation,
     sendRequestsViaBackground: false,
     screenCaptureOverlay: false,
@@ -356,8 +356,8 @@ chrome.storage.sync.get({
     ttsContinuous: false,
     xSpacing: 15,
     ySpacing: 15,
-    saveTranslationResult: false,
-    useTranslationCache: false,
+    saveTranslationResult: true,
+    useTranslationCache: true,
     autoScroll: false,
     textRepairMode: 'white'
 }, async function(items) {
@@ -637,6 +637,7 @@ async function doFetch(url, options) {
 }
 
 async function ajax(src,img,checkData,showOverlay){
+    if (ocrMethod === "mobile") return ajaxMobile(src,img,checkData,showOverlay);
     if (useOpenAI) {
         return ajaxOpenAI(src, img, checkData, showOverlay);
     }
@@ -987,7 +988,7 @@ async function ajaxOpenAI(src, img, checkData, showOverlay) {
 
         // Step 2: OCR (text detection + coordinates)
         let boxes;
-        if (ocrMethod === "paddleocr") {
+        if (ocrMethod === "paddleocr" || ocrMethod === "mobile") {
             if (sourceLang === "auto") {
                 alert(chrome.i18n.getMessage("alert_set_langpair"));
                 chrome.runtime.sendMessage("showOptions");
@@ -2391,9 +2392,7 @@ function paddleMessageListener(event) {
 // applies.
 function injectPaddleLibrariesIntoPage() {
     return Promise.all([
-        isFirefox
-            ? loadGzippedLibrary(chrome.runtime.getURL('paddleocr/opencv.js.gz'))
-            : loadLibrary(chrome.runtime.getURL('paddleocr/opencv.js'), 'text/javascript'),
+        loadLibrary(chrome.runtime.getURL('paddleocr/opencv.js'), 'text/javascript'),
         loadLibrary(chrome.runtime.getURL('paddleocr/ort.min.js'), 'text/javascript')
     ]).then(function() {
         return loadLibrary(chrome.runtime.getURL('paddleocr/esearch-ocr/dist/esearch-ocr.umd.js'), 'text/javascript');
@@ -2478,6 +2477,7 @@ function doPaddleOCRRequest(dataURL, sourceLang, scale) {
 }
 
 function paddleOCR(imageDataURL, sourceLang) {
+    if (ocrMethod === "mobile") return mobileJob({kind:"ocr",src:imageDataURL}).then(r=>r.boxes);
     return injectPaddleLibraries().then(function() {
         return ensurePaddleModel(sourceLang);
     }).then(function() {
@@ -2689,6 +2689,7 @@ function yieldToBrowser() {
 }
 
 function alterLanguage(e){
+    if (mobileToggle(e)) return;
     if (!e){
         return
     }
@@ -4655,6 +4656,10 @@ function resetToolbarButton() {
 }
 
 function processScreenOCR(dataURL) {
+    if (ocrMethod === "mobile") {
+        mobileJob({kind:"ocr",src:dataURL}).then(r=>handleScreenOCRResult(dataURL,r.boxes)).catch(e=>{mobileToast(e.message,true);resetToolbarButton();});
+        return;
+    }
     if (sourceLang === "auto" && (translationMode === "local" || screenCaptureServerFailed)) {
         alert(chrome.i18n.getMessage("alert_set_langpair"));
         chrome.runtime.sendMessage("showOptions");
@@ -4785,7 +4790,7 @@ function handleScreenOCRResult(dataURL, boxes) {
         return;
     }
 
-    if (useOpenAI) {
+    if (useOpenAI || ocrMethod === "mobile") {
         return translateScreenTextsViaOpenAI(sourceTexts).then(function(translations) {
             for (var j = 0; j < boxes.length && j < translations.length; j++) {
                 boxes[j].target = translations[j];
@@ -4861,6 +4866,7 @@ function parseOpenAIExtraParams() {
 }
 
 function translateScreenTextsViaOpenAI(sourceTexts) {
+    if (ocrMethod === "mobile") return mobileJob({kind:"translate",texts:sourceTexts});
     var actualTargetLang = targetLang === 'auto' ? 'english' : targetLang;
     var prompt = openaiPrompt
         .replace(/\{sourceLang\}/g, sourceLang)
@@ -5451,7 +5457,7 @@ function showResultDialog(dataURL, boxes, message, hideThumbnail) {
         });
         ttsModeSelect.addEventListener('change', function() {
             ttsPlaybackMode = ttsModeSelect.value;
-            chrome.storage.sync.set({ ttsPlaybackMode: ttsPlaybackMode });
+            chrome.storage.local.set({ ttsPlaybackMode: ttsPlaybackMode });
         });
         ttsModeRow.appendChild(ttsModeLabel);
         ttsModeRow.appendChild(ttsModeSelect);
@@ -5484,7 +5490,7 @@ function showResultDialog(dataURL, boxes, message, hideThumbnail) {
                     ttsTargetVoice = select.value;
                 }
                 data[storageKey] = select.value;
-                chrome.storage.sync.set(data);
+                chrome.storage.local.set(data);
             });
             return select;
         }
@@ -5516,7 +5522,7 @@ function showResultDialog(dataURL, boxes, message, hideThumbnail) {
         ttsContLabel.style.cssText = 'cursor:pointer;';
         ttsContCb.addEventListener('change', function() {
             ttsContinuous = ttsContCb.checked;
-            chrome.storage.sync.set({ ttsContinuous: ttsContinuous });
+            chrome.storage.local.set({ ttsContinuous: ttsContinuous });
         });
         ttsContRow.appendChild(ttsContCb);
         ttsContRow.appendChild(ttsContLabel);
@@ -5926,7 +5932,7 @@ function dispatchFloatingButtonAction() {
 
 // Listen for storage changes to apply settings dynamically
 chrome.storage.onChanged.addListener(function(changes, areaName) {
-    if (areaName !== 'sync') return;
+    if (areaName !== 'local') return;
 
     if (changes.serverURL) serverURL = changes.serverURL.newValue;
     if (changes.pickingWay) pickingWay = changes.pickingWay.newValue;

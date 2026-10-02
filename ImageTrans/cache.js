@@ -3,7 +3,7 @@ const _i18nOriginal = chrome.i18n.getMessage.bind(chrome.i18n);
 let getMessage = _i18nOriginal;
 
 async function initI18n() {
-  const { uiLanguage } = await chrome.storage.sync.get({ uiLanguage: '' });
+  const { uiLanguage } = await chrome.storage.local.get({ uiLanguage: '' });
   if (uiLanguage) {
     try {
       const url = chrome.runtime.getURL('_locales/' + uiLanguage + '/messages.json');

@@ -1,0 +1,111 @@
+{
+  "name": "__MSG_ext_name__",
+  "version": "5.91",
+  "description": "__MSG_ext_desc__",
+  "default_locale": "en",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "contextMenus",
+    "clipboardWrite",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "cors_rules",
+        "enabled": false,
+        "path": "cors_rules.json"
+      }
+    ]
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "html-to-image.js",
+        "getImage.js"
+      ],
+      "css": [
+        "cursor.css"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "imagetrans.png"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "MacCtrl+Shift+V"
+      },
+      "description": "__MSG_ext_command_desc__"
+    },
+    "screen-capture-ocr": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "MacCtrl+Shift+L"
+      },
+      "description": "__MSG_screen_capture_ocr_cmd_desc__"
+    }
+  },
+  "icons": {
+    "16": "imagetrans.png",
+    "48": "imagetrans.png",
+    "128": "imagetrans.png"
+  },
+  "homepage_url": "https://www.basiccat.org/imagetrans",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "_locales/*",
+        "pinyin.js",
+        "pinyin-bridge.js",
+        "furigana-bridge.js",
+        "kuromoji/kuroshiro.min.js",
+        "kuromoji/kuroshiro-analyzer-kuromoji.min.js",
+        "kuromoji/dict/*",
+        "paddleocr/sandbox.html",
+        "paddleocr/sandbox.js",
+        "paddleocr/opencv.js",
+        "paddleocr/ort.min.js",
+        "paddleocr/esearch-ocr/dist/esearch-ocr.umd.js",
+        "paddleocr/page-ocr.js",
+        "paddleocr/tiny/ppocrv6_tiny_dict.txt",
+        "paddleocr/rec.onnx",
+        "paddleocr/ppocrv6_dict.txt",
+        "paddleocr/ort-wasm-simd-threaded.jsep.js",
+        "paddleocr/ort-wasm-simd-threaded.jsep.wasm",
+        "paddleocr/PP-OCRv6_det_small.onnx",
+        "paddleocr/model.onnx"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "sandbox": {
+    "pages": [
+      "paddleocr/sandbox.html"
+    ]
+  },
+  "content_security_policy": {
+    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' chrome-extension: 'unsafe-eval'; child-src 'self';"
+  },
+  "manifest_version": 3
+}

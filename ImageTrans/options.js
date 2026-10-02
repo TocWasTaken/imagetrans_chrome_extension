@@ -1,11 +1,10 @@
-const DEFAULT_OPENAI_PROMPT = `Translate the following texts from {sourceLang} to {targetLang}. Return ONLY a JSON array of translated strings in the same order (no markdown, no code fences).
-Texts: {texts}`;
+const DEFAULT_OPENAI_PROMPT = MobileCommon.PROMPT;
 
 // Default PaddleOCR init params, matching getImage.js PADDLE_OCR_DEFAULT_PARAMS.
 const PADDLE_OCR_DEFAULT_PARAMS = '{"det_db_thresh":0.3,"det_db_box_thresh":0.6,"detMean":[0.5, 0.5, 0.5],"detStd":[0.5, 0.5, 0.5],"det_db_unclip_ratio":1.5,"erode_size":1}';
 
 // Default OpenAI extra params, merged into the chat/completions request body.
-const DEFAULT_OPENAI_EXTRA_PARAMS = '{"thinking":{"type":"disabled"}}';
+const DEFAULT_OPENAI_EXTRA_PARAMS = '';
 
 // --- Custom i18n: allow user to override UI language ---
 // Guard the top-level chrome.i18n access. On some platforms (e.g. Edge on
@@ -25,7 +24,7 @@ let getMessage = defaultGetMessage;
 async function initI18n() {
   let uiLanguage = '';
   try {
-    const items = await chrome.storage.sync.get({ uiLanguage: '' });
+    const items = await chrome.storage.local.get({ uiLanguage: '' });
     uiLanguage = items.uiLanguage;
   } catch (e) { /* storage unavailable; use browser default */ }
   if (uiLanguage) {
@@ -150,7 +149,7 @@ function buildLanguageCodes() {
 }
 
 function save() {
-  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.sync) {
+  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
     alert('当前浏览器不支持扩展存储，无法保存设置。');
     return;
   }
@@ -197,13 +196,13 @@ function save() {
   const textRepairMode = document.getElementById("textRepairMode").value;
 
   // PaddleOCR requires a specific language; "auto" is not supported.
-  var usingPaddleOCR = translationMode === "local" || (useOpenAI && ocrMethod === "paddleocr");
+  var usingPaddleOCR = ocrMethod === "paddleocr";
   if (usingPaddleOCR && (sourceLang === "auto" || targetLang === "auto")) {
     alert(getMessage("options_langpair_hint"));
     return;
   }
 
-  chrome.storage.sync.set({
+  chrome.storage.local.set({
     serverURL: URL,
     pickingWay: pickingWay,
     useCanvas: useCanvas,
@@ -252,7 +251,7 @@ function save() {
 }
 
 function load() {
-  chrome.storage.sync.get({
+  chrome.storage.local.get({
     serverURL: 'https://local.basiccat.org:51043',
     pickingWay: '1',
     useCanvas: true,
@@ -264,16 +263,16 @@ function load() {
     minFontSize: 14,
     displayName: "",
     password:"",
-    sourceLang:"auto",
-    targetLang:"auto",
-    useOpenAI: false,
-    openaiURL: 'https://api.deepseek.com/v1',
+    sourceLang:"ko",
+    targetLang:"en",
+    useOpenAI: true,
+    openaiURL: 'https://openrouter.ai/api/v1',
     openaiKey: '',
-    openaiModel: 'deepseek-v4-flash',
+    openaiModel: 'tencent/hy-mt2-7b',
     openaiPrompt: DEFAULT_OPENAI_PROMPT,
     openaiExtraParams: DEFAULT_OPENAI_EXTRA_PARAMS,
-    ocrMethod: 'paddleocr',
-    translationMode: 'imagetrans',
+    ocrMethod: 'mobile',
+    translationMode: 'local',
     defaultPresetTranslation: 'glm4flash',
     useYOLODetection: false,
     useYOLOForJapanese: true,
@@ -290,8 +289,8 @@ function load() {
     floatingBtnAction: 'translate',
     screenCaptureInstantOCR: false,
     uiLanguage: '',
-    saveTranslationResult: false,
-    useTranslationCache: false,
+    saveTranslationResult: true,
+    useTranslationCache: true,
     autoScroll: false,
     textRepairMode: 'white'
   }, function(items) {
@@ -367,7 +366,7 @@ function load() {
     document.getElementById("useTranslationCache").checked = items.useTranslationCache;
     document.getElementById("autoScroll").checked = items.autoScroll;
     document.getElementById("textRepairMode").value = items.textRepairMode || 'white';
-    document.getElementById("ocrMethodSection").style.display = items.useOpenAI ? 'block' : 'none';
+    document.getElementById("ocrMethodSection").style.display = 'block';
   });
 }
 
@@ -440,7 +439,7 @@ window.onload = async function (){
       document.getElementById("renderTextInFrontend").checked = true;
       document.getElementById("ocrMethodSection").style.display = 'block';
     } else {
-      document.getElementById("ocrMethodSection").style.display = 'none';
+      document.getElementById("ocrMethodSection").style.display = 'block';
     }
   })
   document.getElementById("cssPresetDefault").addEventListener("click",function(){
